@@ -1,0 +1,79 @@
+import sensor, image, time, pyb,lcd
+from pyb import UART
+from pyb import LED
+import pyb, ustruct
+red_threshold = (34,81,9,78,8,73) # red_thresholds 红色阈值
+green_threshold  = (25,50,-40,40,5,60) # green_thresholds 绿色阈值
+blue_threshold  = (42, 72, -60, 16, -26, -67)# blue_thresholds 蓝色阈值
+
+
+text = "321\n"
+data = ustruct.pack("<%ds" % len(text), text)
+
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)
+sensor.skip_frames(time = 3000)
+sensor.set_auto_gain(False) # must be turned off for color tracking
+sensor.set_auto_whitebal(False) # must be turned off for color tracking
+#sensor.set_vflip(True)#垂直翻转
+#sensor.set_hmirror(True)#水平翻转
+r_led = LED(1)
+b_led = LED(3)
+clock = time.clock()
+uart = UART(3, 115200) #打开串口
+uart.init(115200, bits=8, parity=None, stop=1) #位宽度参数bits=8，奇偶校验参数parity=None,停止位参数stop=1
+# 只有比“pixel_threshold”多的像素和多于“area_threshold”的区域才被
+# 下面的“find_blobs”返回。 如果更改相机分辨率，
+# 请更改“pixels_threshold”和“area_threshold”。 “merge = True”合并图像中所有重叠的色块。
+r=0 #红色
+g=0 #绿色
+b=0 #蓝色
+k=0
+c=1
+d=0
+
+bus = pyb.I2C(2, pyb.I2C.SLAVE, addr=0x12)
+bus.deinit() # 完全关闭设备
+bus = pyb.I2C(2, pyb.I2C.SLAVE, addr=0x12)
+print("Waiting for Arduino...")
+while(True):
+    clock.tick()
+#    c = uart.readchar()-48 #48是什么？从单片机传过来的数据？
+
+
+   
+    if c==1 :
+        
+            b_led.off()
+            img = sensor.snapshot().lens_corr(1.8)
+            for blob in img.find_blobs([red_threshold], pixels_threshold=1000, area_threshold=1000):
+                img.draw_rectangle(blob.rect())
+                img.draw_cross(blob.cx(), blob.cy())
+                r=blob.cx() #把红色的x坐标给r
+                k=k+1
+                print('r')
+            #print("1111111111111")
+            #print(r)
+            for blob in img.find_blobs([green_threshold], pixels_threshold=1000, area_threshold=1000):
+                img.draw_rectangle(blob.rect())
+                img.draw_cross(blob.cx(), blob.cy())
+                g=blob.cx() #把绿色的x坐标给g
+                k=k+1
+                print('g')
+            #print("222222222222()")
+            #print(g)
+            for blob in img.find_blobs([blue_threshold], pixels_threshold=800, area_threshold=800):
+                img.draw_rectangle(blob.rect())
+                img.draw_cross(blob.cx(), blob.cy())
+                b=blob.cx() #把蓝色的x坐标给g
+                k=k+1
+                print('b')
+                
+            #print("3333333333333")
+            #print(b)
+                
+                  
+           
+    
+    
